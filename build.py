@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-通用打包脚本
-支持Windows和macOS的自动打包
+汎用パッケージングスクリプト
+WindowsとmacOSの自動パッケージに対応
 """
 
 import os
@@ -14,34 +14,29 @@ import pathlib as pathlib_module
 try:
     from pathlib import Path
 except ImportError:
-    # 对于老版本Python
     Path = pathlib_module.Path
 
 
 def check_environment():
-    """检查打包环境"""
-    print("=== 普瑞赛斯AI助手 - 环境检查 ===\n")
+    print("=== ChatKaltsit 環境確認 ===\n")
 
-    # 检查Python版本
     python_version = sys.version_info
-    if python_version < (3, 7):
-        print(f"❌ Python版本过低: {python_version.major}.{python_version.minor}")
-        print("需要Python 3.7或更高版本")
+    if python_version < (3, 10):
+        print(f"❌ Pythonバージョンが古すぎます: {python_version.major}.{python_version.minor}")
+        print("Python 3.10以上が必要です")
         return False
 
     print(
-        f"✅ Python版本: {python_version.major}.{python_version.minor}.{python_version.micro}"
+        f"✅ Pythonバージョン: {python_version.major}.{python_version.minor}.{python_version.micro}"
     )
 
-    # 检查必要文件
     required_files = [
-        "preset_ai_assistant.py",
+        "web_app.py",
         "run_app.py",
         "requirements.txt",
-        ".env",
     ]
 
-    required_dirs = ["preset_ai_assistant"]
+    required_dirs = ["data"]
 
     missing_files = []
     missing_dirs = []
@@ -55,70 +50,63 @@ def check_environment():
             missing_dirs.append(dir_path)
 
     if missing_files or missing_dirs:
-        print("\n❌ 缺少必要文件或目录:")
+        print("\n❌ 必要ファイルまたはディレクトリがありません:")
         for file in missing_files:
             print(f"   - {file}")
         for dir_path in missing_dirs:
             print(f"   - {dir_path}")
         return False
 
-    print("✅ 必要文件检查通过")
+    print("✅ 必要ファイルの確認通過")
 
-    # 检查PyInstaller
     try:
         import PyInstaller
 
-        print(f"✅ PyInstaller已安装: {PyInstaller.__version__}")
+        print(f"✅ PyInstallerインストール済み: {PyInstaller.__version__}")
     except ImportError:
-        print("⚠️  PyInstaller未安装")
+        print("⚠️  PyInstallerが未インストールです")
         return False
 
     return True
 
 
 def install_dependencies():
-    """安装打包依赖"""
-    print("\n=== 安装打包依赖 ===\n")
+    print("\n=== パッケージ依存のインストール ===\n")
 
-    # 安装requirements.txt中的依赖
-    print("安装应用依赖...")
+    print("アプリ依存をインストールしています...")
     subprocess.run([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
 
-    # 安装PyInstaller
-    print("安装PyInstaller...")
+    print("PyInstallerをインストールしています...")
     subprocess.run([sys.executable, "-m", "pip", "install", "pyinstaller"])
 
-    print("\n✅ 依赖安装完成")
+    print("\n✅ 依存のインストール完了")
 
 
 def build_package():
-    """执行打包"""
-    print("\n=== 开始打包 ===\n")
+    print("\n=== パッケージング開始 ===\n")
 
-    # 检测操作系统
     os_name = platform.system()
-    print(f"操作系统: {os_name}")
+    print(f"OS: {os_name}")
 
-    # 构建PyInstaller命令
+    sep = ";" if os_name == "Windows" else ":"
+
     pyinstaller_cmd = [
         sys.executable,
         "-m",
         "PyInstaller",
         "--clean",
         "--name",
-        "PresetAI",
+        "KaltsitAI",
         "--windowed",
         "--onefile",
         "--add-data",
-        "preset_ai_assistant;preset_ai_assistant",
-        "--add-data",
-        ".env;.",
+        f"data{sep}data",
         "--hidden-import",
         "flask",
         "--hidden-import",
         "pandas",
         "--hidden-import",
-        "jieba",
+        "janome",
         "--hidden-import",
         "requests",
         "--hidden-import",
@@ -127,8 +115,6 @@ def build_package():
         "numpy",
         "--hidden-import",
         "dotenv",
-        "--hidden-import",
-        "optimized_response_generator",
         "--exclude-module",
         "matplotlib.backends.backend_qt4agg",
         "--exclude-module",
@@ -138,169 +124,157 @@ def build_package():
         "run_app.py",
     ]
 
-    # macOS特定配置
     if os_name == "Darwin":
         pyinstaller_cmd.extend(
             ["--exclude-module", "matplotlib.backends.backend_macosx"]
         )
 
-    print("执行PyInstaller...")
-    print("这可能需要几分钟时间，请耐心等待...\n")
+    print("PyInstallerを実行しています...")
+    print("数分かかる場合があります。そのままお待ちください...\n")
 
     try:
         result = subprocess.run(pyinstaller_cmd, check=True)
 
         if result.returncode == 0:
-            print("\n✅ 打包成功！")
-            print(f"\n输出目录: {Path('dist').absolute()}")
+            print("\n✅ パッケージング成功！")
+            print(f"\n出力ディレクトリ: {Path('dist').absolute()}")
             return True
         else:
-            print("\n❌ 打包失败")
+            print("\n❌ パッケージング失敗")
             return False
 
     except subprocess.CalledProcessError as e:
-        print(f"\n❌ 打包失败: {e}")
+        print(f"\n❌ パッケージング失敗: {e}")
         return False
     except Exception as e:
-        print(f"\n❌ 打包过程出错: {e}")
+        print(f"\n❌ パッケージング中にエラー: {e}")
         return False
 
 
 def create_launch_scripts():
-    """创建启动脚本"""
-    print("\n=== 创建启动脚本 ===\n")
+    print("\n=== 起動スクリプト作成 ===\n")
 
     os_name = platform.system()
     dist_dir = Path("dist")
 
     if os_name == "Windows":
-        # 创建Windows批处理脚本
         script_content = """@echo off
+chcp 65001 >nul
 cd /d "%~dp0"
-echo 正在启动普瑞赛斯AI助手...
+echo ChatKaltsit を起動しています...
 echo.
-PresetAI.exe
+KaltsitAI.exe
 if errorlevel 1 (
     echo.
-    echo 程序已退出，请按任意键关闭窗口...
+    echo プログラムが終了しました。何かキーを押してウィンドウを閉じてください...
     pause >nul
 )
 """
-        script_path = dist_dir / "启动普瑞赛斯助手.bat"
-        with open(script_path, "w", encoding="gbk") as f:
+        script_path = dist_dir / "ケルシー起動.bat"
+        with open(script_path, "w", encoding="cp932") as f:
             f.write(script_content)
-        print(f"✅ 创建: {script_path}")
+        print(f"✅ 作成: {script_path}")
 
-        # 创建使用说明
-        readme_content = """普瑞赛斯AI助手 - 使用说明
+        readme_content = """ChatKaltsit - 使い方
 
-1. 双击运行 "启动普瑞赛斯助手.bat"（推荐）或 "PresetAI.exe"
-2. 浏览器会自动打开 http://localhost:8080
-3. 如果浏览器没有自动打开，手动访问 http://localhost:8080
-4. 按 Ctrl+C 停止服务器
+1. 「ケルシー起動.bat」(推奨)または「KaltsitAI.exe」をダブルクリック
+2. ブラウザが自動で http://localhost:8080 を開きます
+3. 自動で開かない場合は手動で http://localhost:8080 にアクセス
+4. Ctrl+C でサーバーを停止
 
-故障排除:
-- 如果端口8080被占用，请关闭占用该端口的程序
-- 如果无法访问网页，请检查防火墙设置
-- 如果程序崩溃，请查看终端中的错误信息
+トラブルシューティング:
+- ポート8080が使用中の場合は、そのプログラムを終了してください
+- Webページにアクセスできない場合はファイアウォール設定を確認してください
+- プログラムが異常終了した場合はターミナルのエラーメッセージを確認してください
 """
-        readme_path = dist_dir / "使用说明.txt"
+        readme_path = dist_dir / "使い方.txt"
         with open(readme_path, "w", encoding="utf-8") as f:
             f.write(readme_content)
-        print(f"✅ 创建: {readme_path}")
+        print(f"✅ 作成: {readme_path}")
 
     elif os_name == "Darwin":
-        # 创建macOS shell脚本
         script_content = """#!/bin/bash
 cd "$(dirname "$0")"
-echo "正在启动普瑞赛斯AI助手..."
-./PresetAI
+echo "ChatKaltsit を起動しています..."
+./KaltsitAI
 """
-        script_path = dist_dir / "run_preset_ai.sh"
+        script_path = dist_dir / "run_kaltsit.sh"
         with open(script_path, "w") as f:
             f.write(script_content)
         os.chmod(script_path, 0o755)
-        print(f"✅ 创建: {script_path}")
+        print(f"✅ 作成: {script_path}")
 
 
 def test_package():
-    """测试打包结果"""
-    print("\n=== 测试打包结果 ===\n")
+    print("\n=== パッケージ結果のテスト ===\n")
 
     os_name = platform.system()
     dist_dir = Path("dist")
 
     if os_name == "Windows":
-        exe_path = dist_dir / "PresetAI.exe"
+        exe_path = dist_dir / "KaltsitAI.exe"
     else:
-        exe_path = dist_dir / "PresetAI"
+        exe_path = dist_dir / "KaltsitAI"
 
     if exe_path.exists():
-        file_size = exe_path.stat().st_size / (1024 * 1024)  # MB
-        print(f"✅ 可执行文件存在: {exe_path}")
-        print(f"   文件大小: {file_size:.2f} MB")
+        file_size = exe_path.stat().st_size / (1024 * 1024)
+        print(f"✅ 実行ファイルあり: {exe_path}")
+        print(f"   サイズ: {file_size:.2f} MB")
         return True
     else:
-        print(f"❌ 可执行文件不存在: {exe_path}")
+        print(f"❌ 実行ファイルがありません: {exe_path}")
         return False
 
 
 def main():
-    """主函数"""
-    print("🎉 普瑞赛斯AI助手 - 自动打包工具\n")
+    print("ChatKaltsit 自動パッケージツール\n")
 
-    # 检查环境
     if not check_environment():
-        print("\n环境检查失败，正在安装依赖...")
+        print("\n環境確認に失敗したため、依存をインストールします...")
         install_dependencies()
 
-        # 重新检查
         if not check_environment():
-            print("\n❌ 环境配置失败，请手动检查依赖")
+            print("\n❌ 環境構築に失敗しました。依存を手動で確認してください")
             try:
-                input("按回车键退出...")
+                input("Enterキーで終了...")
             except EOFError:
                 pass
             sys.exit(1)
 
-    # 执行打包
     if not build_package():
-        print("\n❌ 打包失败")
+        print("\n❌ パッケージング失敗")
         try:
-            input("按回车键退出...")
+            input("Enterキーで終了...")
         except EOFError:
             pass
         sys.exit(1)
 
-    # 创建启动脚本
     create_launch_scripts()
 
-    # 测试打包结果
     if not test_package():
-        print("\n⚠️  打包完成但验证失败")
+        print("\n⚠️  パッケージングは完了しましたが検証に失敗しました")
 
-    # 总结
     print("\n" + "=" * 50)
-    print("🎉 打包完成！")
+    print("🎉 パッケージング完了！")
     print("=" * 50)
-    print(f"\n输出目录: {Path('dist').absolute()}")
+    print(f"\n出力ディレクトリ: {Path('dist').absolute()}")
 
     os_name = platform.system()
     if os_name == "Windows":
-        print("\n使用方法:")
-        print("  1. 双击运行 '启动普瑞赛斯助手.bat'")
-        print("  2. 或直接运行 'PresetAI.exe'")
+        print("\n使い方:")
+        print("  1. 「ケルシー起動.bat」をダブルクリック")
+        print("  2. または直接「KaltsitAI.exe」を実行")
     elif os_name == "Darwin":
-        print("\n使用方法:")
-        print("  1. 双击运行 'PresetAI'")
-        print("  2. 或在终端中执行 './PresetAI'")
-        print("  3. 或运行 './run_preset_ai.sh'")
+        print("\n使い方:")
+        print("  1. 「KaltsitAI」をダブルクリック")
+        print("  2. またはターミナルで './KaltsitAI' を実行")
+        print("  3. または './run_kaltsit.sh' を実行")
 
-    print("\n浏览器会自动打开 http://localhost:8080")
+    print("\nブラウザが自動で http://localhost:8080 を開きます")
     print("=" * 50 + "\n")
 
     try:
-        input("按回车键退出...")
+        input("Enterキーで終了...")
     except EOFError:
         pass
 

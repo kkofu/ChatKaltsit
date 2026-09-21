@@ -1,99 +1,84 @@
 #!/bin/bash
 # -*- coding: utf-8 -*-
-"""
-macOS打包脚本
-使用PyInstaller打包为macOS应用程序
-"""
 
-set -e  # 遇到错误立即退出
+set -e
 
-echo "=== 普瑞赛斯AI助手 - macOS打包工具 ==="
+echo "=== ChatKaltsit macOSパッケージツール ==="
 echo ""
 
-# 颜色定义
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-# 检查Python环境
 if ! command -v python3 &> /dev/null; then
-    echo -e "${RED}❌ 未找到Python3${NC}"
-    echo "请先安装Python 3.7或更高版本"
+    echo -e "${RED}❌ Python3が見つかりません${NC}"
+    echo "Python 3.10以上を先にインストールしてください"
     exit 1
 fi
 
-echo -e "${GREEN}✅ Python3已安装${NC}"
+echo -e "${GREEN}✅ Python3を確認しました${NC}"
 
-# 安装PyInstaller
 echo ""
-echo "正在安装PyInstaller..."
+echo "PyInstallerをインストールしています..."
 pip3 install pyinstaller
 
-# 清理之前的构建
 echo ""
-echo "清理之前的构建文件..."
+echo "以前のビルドファイルを掃除しています..."
 rm -rf build dist *.spec
 
-# 运行PyInstaller
 echo ""
-echo "开始打包..."
-echo "这可能需要几分钟时间，请耐心等待..."
+echo "パッケージング開始..."
+echo "数分かかる場合があります。そのままお待ちください..."
 echo ""
 
 pyinstaller --clean \
-    --name "PresetAI" \
+    --name "KaltsitAI" \
     --windowed \
     --onefile \
-    --add-data "preset_ai_assistant:preset_ai_assistant" \
-    --add-data ".env:." \
+    --add-data "data:data" \
     --hidden-import flask \
     --hidden-import pandas \
-    --hidden-import jieba \
+    --hidden-import janome \
     --hidden-import requests \
     --hidden-import matplotlib \
     --hidden-import numpy \
     --hidden-import dotenv \
-    --hidden-import optimized_response_generator \
     --exclude-module matplotlib.backends.backend_qt4agg \
     --exclude-module matplotlib.backends.backend_tkagg \
     --exclude-module matplotlib.backends.backend_gtk3agg \
     --exclude-module matplotlib.backends.backend_macosx \
     run_app.py
 
-# 检查打包结果
-if [ -f "dist/PresetAI" ]; then
+if [ -f "dist/KaltsitAI" ]; then
     echo ""
-    echo -e "${GREEN}✅ 打包成功！${NC}"
+    echo -e "${GREEN}✅ パッケージング成功！${NC}"
     echo ""
-    echo "应用程序位置: $(pwd)/dist/PresetAI"
+    echo "アプリケーション: $(pwd)/dist/KaltsitAI"
     echo ""
-    
-    # 创建应用程序包结构
-    APP_NAME="PresetAI.app"
+
+    APP_NAME="KaltsitAI.app"
     APP_PATH="dist/$APP_NAME"
-    
-    echo "正在创建macOS应用程序包..."
+
+    echo "macOSアプリケーションパッケージを作成しています..."
     rm -rf "$APP_PATH"
-    
-    # 创建应用目录结构
+
     mkdir -p "$APP_PATH/Contents/MacOS"
     mkdir -p "$APP_PATH/Contents/Resources"
-    
-    # 创建Info.plist
+
     cat > "$APP_PATH/Contents/Info.plist" << EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
     <key>CFBundleExecutable</key>
-    <string>PresetAI</string>
+    <string>KaltsitAI</string>
     <key>CFBundleIdentifier</key>
-    <string>com.presetai.assistant</string>
+    <string>com.kaltsitai.assistant</string>
     <key>CFBundleName</key>
-    <string>PresetAI</string>
+    <string>KaltsitAI</string>
     <key>CFBundleDisplayName</key>
-    <string>普瑞赛斯AI助手</string>
+    <string>ChatKaltsit</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
@@ -107,41 +92,38 @@ if [ -f "dist/PresetAI" ]; then
 </dict>
 </plist>
 EOF
-    
-    # 复制可执行文件
-    cp "dist/PresetAI" "$APP_PATH/Contents/MacOS/"
-    
-    # 创建一个简单的启动脚本
-    cat > "dist/run_preset_ai.sh" << 'EOF'
+
+    cp "dist/KaltsitAI" "$APP_PATH/Contents/MacOS/"
+
+    cat > "dist/run_kaltsit.sh" << 'EOF'
 #!/bin/bash
 cd "$(dirname "$0")"
-./PresetAI
+./KaltsitAI
 EOF
-    chmod +x "dist/run_preset_ai.sh"
-    
-    echo -e "${GREEN}✅ 应用程序包创建成功！${NC}"
+    chmod +x "dist/run_kaltsit.sh"
+
+    echo -e "${GREEN}✅ アプリケーションパッケージの作成成功！${NC}"
     echo ""
-    echo "输出文件:"
-    echo "  - 可执行文件: dist/PresetAI"
-    echo "  - 启动脚本: dist/run_preset_ai.sh"
-    echo "  - 应用包: dist/PresetAI.app"
+    echo "出力ファイル:"
+    echo "  - 実行ファイル: dist/KaltsitAI"
+    echo "  - 起動スクリプト: dist/run_kaltsit.sh"
+    echo "  - アプリパッケージ: dist/KaltsitAI.app"
     echo ""
-    echo "使用方法:"
-    echo "  方法1: 双击运行 dist/PresetAI"
-    echo "  方法2: 在终端中运行 ./dist/run_preset_ai.sh"
-    echo "  方法3: 拖拽PresetAI.app到应用程序文件夹"
+    echo "使い方:"
+    echo "  方法1: dist/KaltsitAI をダブルクリック"
+    echo "  方法2: ターミナルで ./dist/run_kaltsit.sh を実行"
+    echo "  方法3: KaltsitAI.app をアプリケーションフォルダへドラッグ"
     echo ""
-    
-    # 询问是否运行
-    read -p "是否现在运行应用？(y/n) " -n 1 -r
+
+    read -p "今すぐアプリを実行しますか？(y/n) " -n 1 -r
     echo ""
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo "正在启动应用..."
-        "./dist/PresetAI"
+        echo "アプリを起動しています..."
+        "./dist/KaltsitAI"
     fi
 else
     echo ""
-    echo -e "${RED}❌ 打包失败${NC}"
-    echo "请检查上面的错误信息"
+    echo -e "${RED}❌ パッケージング失敗${NC}"
+    echo "上のエラーメッセージを確認してください"
     exit 1
 fi
