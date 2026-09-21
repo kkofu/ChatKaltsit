@@ -12,10 +12,8 @@ __all__ = [
     'app', 'dialogue_system', 'init_dialogue_system', 'CharacterProfile', 'KaltsitDialogueSystem',
 ]
 
-# Flask Webアプリ
 app = Flask(__name__)
 
-# 対話システム
 dialogue_system = None
 
 def init_dialogue_system():
@@ -71,7 +69,7 @@ def index():
     </div>
 
     <script>
-        // 40文字超の送信文を均等な長さに分割 (表示用。送信は全文1回のみ)
+        // 40文字超の送信文を均等な長さに分割 (表示用、送信は全文1回のみ)
         function splitBalanced(text, limit) {
             const chars = [...text];  // サロゲートペア(絵文字等)対応
             if (chars.length <= limit) return [text];
@@ -223,6 +221,6 @@ def examples():
 
 if __name__ == "__main__":
     init_dialogue_system()
-    print("ケルシーAI対話アシスタントを起動しました")
-    print("http://localhost:8080 にアクセスして対話を開始")
+    print("ChatKaltsit を起動しました")
+    print("http://localhost:8080 にアクセスして使用")
     app.run(host="0.0.0.0", port=8080, debug=False)
