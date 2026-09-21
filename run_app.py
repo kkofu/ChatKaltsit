@@ -5,7 +5,6 @@
 打包版本的主入口文件
 """
 
-import os
 import sys
 import webbrowser
 import time
@@ -23,14 +22,14 @@ def check_environment():
     print("正在初始化...")
 
     # 检查数据文件
-    data_dir = current_dir / "preset_ai_assistant"
+    data_dir = current_dir / "data"
     if not data_dir.exists():
         print(f"❌ 数据目录不存在: {data_dir}")
         print("请确保包含了必要的数据文件")
         return False
 
     # 检查对话数据
-    dialogues_file = data_dir / "preset_dialogues.csv"
+    dialogues_file = data_dir / "kaltsit_dialogues.csv"
     if not dialogues_file.exists():
         print(f"❌ 对话数据文件不存在: {dialogues_file}")
         return False
@@ -52,7 +51,8 @@ def main():
         sys.exit(1)
 
     try:
-        from preset_ai_assistant import app, init_dialogue_system
+        from web_app import app
+        from core import init_dialogue_system
 
         # 初始化对话系统
         init_dialogue_system()
